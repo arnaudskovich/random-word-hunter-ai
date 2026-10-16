@@ -67,11 +67,11 @@ h1 small{display:block;font-size:.72rem;font-style:italic;font-weight:500;letter
   <div class="foot"><button id="again">Nouveau mot</button></div>
 </main>
 <script>
-const MAX=5, API="https://trouve-mot.fr/api/random";
+const MAX=5, API="https://trouve-mot.fr/api/random/10";
 const FALLBACK=["bibliothèque","dragon","guitare","château","montagne","ordinateur","chocolat","aventure","galaxie","skateboard","tonnerre","labyrinthe","papillon","horloge","volcan","trésor","fantôme","carnaval","météorite","basketball","champion","mystère","kangourou","parachute","écureuil","télescope","cinéma","tempête","jungle","robot"];
 const $=id=>document.getElementById(id);
 const strip=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-let word,plain,found,wrong,lives,over;
+let word,cat,plain,found,wrong,lives,over;
 
 /* Thème */
 function setTheme(t,save){
@@ -89,21 +89,23 @@ $("theme").addEventListener("click",()=>setTheme(document.documentElement.datase
 async function fetchWord(){
   try{
     const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),3500);
-    for(let i=0;i<4;i++){
-      const r=await fetch(API,{signal:ctrl.signal}); if(!r.ok) throw 0;
-      let d=await r.json(); d=Array.isArray(d)?d[0]:d;
-      const w=(d&&d.name||"").trim().toLowerCase();
-      if(/^[a-zàâäçéèêëîïôöùûüÿœæ]{4,}$/.test(w)) return {w,src:"API trouve-mot.fr"};
+    const r=await fetch(API,{signal:ctrl.signal,headers:{Accept:"application/json"}});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const list=await r.json();            // tableau de {name, categorie}
+    for(const d of Array.isArray(list)?list:[]){
+      const w=(d.name||"").trim().toLowerCase();
+      if(/^[a-zàâäçéèêëîïôöùûüÿœæ]{4,}$/.test(w))
+        return {w,cat:(d.categorie||"").toLowerCase(),src:"API trouve-mot.fr"};
     }
-  }catch(e){}
-  return {w:FALLBACK[Math.floor(Math.random()*FALLBACK.length)],src:"mode hors-ligne"};
+  }catch(e){console.warn("API indisponible, mode hors-ligne",e)}
+  return {cat:"",w:FALLBACK[Math.floor(Math.random()*FALLBACK.length)],src:"mode hors-ligne"};
 }
 
 async function start(){
   over=true; $("inp").disabled=true; $("msg").textContent=""; $("msg").className="msg";
   $("info").textContent="Chargement…"; $("board").innerHTML=""; $("wrong").innerHTML="";
   const r=await fetchWord();
-  word=r.w; plain=strip(word); found=new Set(); wrong=[]; lives=MAX; over=false;
+  word=r.w; cat=r.cat; plain=strip(word); found=new Set(); wrong=[]; lives=MAX; over=false;
   $("src").textContent=r.src; render();
   $("inp").disabled=false; $("inp").focus();
 }
@@ -111,7 +113,7 @@ async function start(){
 function render(){
   $("hearts").innerHTML=Array.from({length:MAX},(_,i)=>
     `<svg class="heart ${i<lives?"":"lost"}" viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.8-8 11-8 11z"/></svg>`).join("");
-  $("info").textContent=`${word.length} lettres`;
+  $("info").textContent=`${word.length} lettres`+(cat?` · ${cat}`:"");
   $("board").style.setProperty("--n",word.length);
   $("board").innerHTML=[...word].map((c,i)=>{
     const shown=found.has(plain[i]), miss=over&&!shown&&lives<=0;
