@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le Mot Caché</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,500&display=swap">
+<style>
+:root{--bg:#e6dac2;--card:#f8f1e1;--ink:#2b2118;--mute:#85735c;--tile:#efe4cc;--line:#cdbb98;--acc:#7a2e2e;--ok:#3f6b4a;--bad:#9b2c2c;--onacc:#f8f1e1;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f0d0a;--card:#1c1814;--ink:#efe4cc;--mute:#9c8d74;--tile:#292219;--line:#4a3d2b;--acc:#c9a15a;--ok:#9cc29a;--bad:#e08a7a;--onacc:#1c1814}}
+:root[data-theme="dark"]{--bg:#0f0d0a;--card:#1c1814;--ink:#efe4cc;--mute:#9c8d74;--tile:#292219;--line:#4a3d2b;--acc:#c9a15a;--ok:#9cc29a;--bad:#e08a7a;--onacc:#1c1814}
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+:root[data-theme="light"]{color-scheme:light}:root[data-theme="dark"]{color-scheme:dark}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:"Lora",Georgia,"Times New Roman",serif;display:flex;justify-content:center;padding:22px 14px}
+main{width:100%;max-width:560px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:28px 24px;align-self:flex-start;position:relative;box-shadow:0 2px 0 var(--line),0 18px 40px -22px rgba(0,0,0,.45)}
+main::before{content:"";position:absolute;inset:7px;border:1px solid var(--line);border-radius:3px;pointer-events:none}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;position:relative}
+h1{font-size:1.3rem;margin:0;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+h1 small{display:block;font-size:.72rem;font-style:italic;font-weight:500;letter-spacing:.04em;text-transform:none;color:var(--mute);margin-top:2px}
+.right{display:flex;align-items:center;gap:12px}
+.hearts{display:flex;gap:3px}
+.heart{width:22px;height:22px;transition:transform .3s,opacity .3s}
+.heart.lost{opacity:.2;transform:scale(.7)}
+.heart path{fill:var(--acc)}
+#theme{background:none;border:1px solid var(--line);color:var(--ink);width:34px;height:34px;padding:0;border-radius:50%;font-size:1rem;line-height:1}
+.meta{display:flex;justify-content:space-between;color:var(--mute);font-size:.78rem;font-style:italic;margin-top:18px;padding-top:10px;border-top:1px solid var(--line)}
+.board{display:flex;flex-wrap:nowrap;justify-content:center;gap:clamp(2px,.9vw,8px);margin:30px 0 28px;min-height:56px;container-type:inline-size}
+.tile{flex:1 1 0;min-width:0;max-width:46px;aspect-ratio:4/5.3;border-radius:2px;background:var(--tile);border:1px solid var(--line);border-bottom:3px solid var(--acc);display:grid;place-items:center;font-size:min(1.7rem,calc(58cqw / var(--n,8)));font-weight:700;text-transform:uppercase;color:var(--ink)}
+.tile.on{animation:pop .35s ease}
+.tile.miss{color:var(--bad);border-bottom-color:var(--bad);font-style:italic}
+.play{display:flex;justify-content:center;align-items:center;gap:14px}
+#inp{width:62px;height:62px;border-radius:3px;border:1.5px solid var(--ink);background:var(--card);color:var(--ink);text-align:center;font:700 1.8rem "Lora",Georgia,serif;text-transform:uppercase;outline:none}
+#inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 28%,transparent)}
+#inp:disabled{opacity:.4}
+.hint{color:var(--mute);font-size:.85rem;font-style:italic}
+.tried{margin-top:26px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:30px;font-size:.82rem;color:var(--mute);font-style:italic}
+.chip{border:1px solid var(--bad);color:var(--bad);border-radius:2px;padding:0 7px;font-weight:700;font-style:normal;text-transform:uppercase;font-size:.85rem;text-decoration:line-through}
+.msg{text-align:center;font-weight:500;font-style:italic;font-size:1.05rem;min-height:28px;margin-top:18px}
+.msg.win{color:var(--ok)}.msg.lose{color:var(--bad)}
+#again{font:700 .85rem "Lora",Georgia,serif;letter-spacing:.12em;text-transform:uppercase;border:0;border-radius:3px;padding:12px 22px;background:var(--acc);color:var(--onacc);cursor:pointer}
+#again:hover{filter:brightness(1.12)}
+.foot{display:flex;justify-content:center;margin-top:10px}
+.shake{animation:shake .4s}
+@keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+</style>
+</head>
+<body>
+<main id="app">
+  <header>
+    <h1>Le Mot Caché<small>un mot, cinq chances</small></h1>
+    <div class="right">
+      <div class="hearts" id="hearts" aria-label="Vies"></div>
+      <button id="theme" aria-label="Changer de thème" title="Changer de thème">☾</button>
+    </div>
+  </header>
+  <div class="meta"><span id="info">Chargement…</span><span id="src"></span></div>
+  <div class="board" id="board"></div>
+  <div class="play">
+    <input id="inp" maxlength="1" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Une lettre">
+    <span class="hint">propose une lettre</span>
+  </div>
+  <div class="tried"><span>Écartées</span><span id="wrong" style="display:contents"></span></div>
+  <div class="msg" id="msg"></div>
+  <div class="foot"><button id="again">Nouveau mot</button></div>
+</main>
+<script>
+const MAX=5, API="https://trouve-mot.fr/api/random";
+const FALLBACK=["bibliothèque","dragon","guitare","château","montagne","ordinateur","chocolat","aventure","galaxie","skateboard","tonnerre","labyrinthe","papillon","horloge","volcan","trésor","fantôme","carnaval","météorite","basketball","champion","mystère","kangourou","parachute","écureuil","télescope","cinéma","tempête","jungle","robot"];
+const $=id=>document.getElementById(id);
+const strip=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+let word,plain,found,wrong,lives,over;
+
+/* Thème */
+function setTheme(t,save){
+  document.documentElement.dataset.theme=t;
+  $("theme").textContent=t==="dark"?"☀":"☾";
+  if(save){try{localStorage.setItem("theme",t)}catch(e){}}
+}
+(function(){
+  let t=null;try{t=localStorage.getItem("theme")}catch(e){}
+  if(!t)t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  setTheme(t,false);
+})();
+$("theme").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark",true));
+
+async function fetchWord(){
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),3500);
+    for(let i=0;i<4;i++){
+      const r=await fetch(API,{signal:ctrl.signal}); if(!r.ok) throw 0;
+      let d=await r.json(); d=Array.isArray(d)?d[0]:d;
+      const w=(d&&d.name||"").trim().toLowerCase();
+      if(/^[a-zàâäçéèêëîïôöùûüÿœæ]{4,}$/.test(w)) return {w,src:"API trouve-mot.fr"};
+    }
+  }catch(e){}
+  return {w:FALLBACK[Math.floor(Math.random()*FALLBACK.length)],src:"mode hors-ligne"};
+}
+
+async function start(){
+  over=true; $("inp").disabled=true; $("msg").textContent=""; $("msg").className="msg";
+  $("info").textContent="Chargement…"; $("board").innerHTML=""; $("wrong").innerHTML="";
+  const r=await fetchWord();
+  word=r.w; plain=strip(word); found=new Set(); wrong=[]; lives=MAX; over=false;
+  $("src").textContent=r.src; render();
+  $("inp").disabled=false; $("inp").focus();
+}
+
+function render(){
+  $("hearts").innerHTML=Array.from({length:MAX},(_,i)=>
+    `<svg class="heart ${i<lives?"":"lost"}" viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.8-8 11-8 11z"/></svg>`).join("");
+  $("info").textContent=`${word.length} lettres`;
+  $("board").style.setProperty("--n",word.length);
+  $("board").innerHTML=[...word].map((c,i)=>{
+    const shown=found.has(plain[i]), miss=over&&!shown&&lives<=0;
+    return `<div class="tile ${shown?"on":""} ${miss?"miss":""}">${shown||miss?c:""}</div>`}).join("");
+  $("wrong").innerHTML=wrong.map(l=>`<span class="chip">${l}</span>`).join("")||`<span>aucune pour l'instant</span>`;
+}
+
+function guess(raw){
+  if(over) return;
+  const l=strip(raw||"").replace(/[^a-z]/g,"")[0]; if(!l) return;
+  if(found.has(l)||wrong.includes(l)) return;
+  if(plain.includes(l)) found.add(l);
+  else{wrong.push(l);lives--;const a=$("app");a.classList.remove("shake");void a.offsetWidth;a.classList.add("shake")}
+  const won=[...plain].every(c=>found.has(c));
+  if(won||lives<=0){over=true;$("inp").disabled=true;
+    $("msg").textContent=won?"Bravo, bien lu !":`Perdu… le mot était « ${word} »`;
+    $("msg").className="msg "+(won?"win":"lose")}
+  render();
+}
+
+$("inp").addEventListener("input",e=>{guess(e.target.value);e.target.value=""});
+$("again").addEventListener("click",start);
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&over)start()});
+start();
+</script>
+</body>
+</html>
